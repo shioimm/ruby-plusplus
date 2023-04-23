@@ -587,6 +587,7 @@ parser_token2id(enum yytokentype tok)
       TOKEN2ID(tCOLON2);
       TOKEN2ID(tCOLON3);
       TOKEN2ID(tOP_ASGN);
+      TOKEN2ID(tINCOP);
       TOKEN2ID(tASSOC);
       TOKEN2ID(tLPAREN);
       TOKEN2ID(tLPAREN_ARG);
@@ -1520,6 +1521,7 @@ static int looking_at_eol_p(struct parser_params *p);
 %token <id> tCOLON2	RUBY_TOKEN(COLON2) "::"
 %token tCOLON3		":: at EXPR_BEG"
 %token <id> tOP_ASGN	"operator-assignment" /* +=, -=  etc. */
+%token <id> tINCOP	"increment-operator" /* ++ */
 %token tASSOC		"=>"
 %token tLPAREN		"("
 %token tLPAREN_ARG	"( arg"
@@ -1557,7 +1559,7 @@ static int looking_at_eol_p(struct parser_params *p);
 %left  keyword_or keyword_and
 %right keyword_not
 %nonassoc keyword_defined
-%right '=' tOP_ASGN
+%right '=' tOP_ASGN tINCOP
 %left modifier_rescue
 %right '?' ':'
 %nonassoc tDOT2 tDOT3 tBDOT2 tBDOT3
@@ -4291,6 +4293,22 @@ method_call	: fcall paren_args
 		    /*% %*/
 		    /*% ripper: aref!($1, escape_Qundef($3)) %*/
 		    }
+		| primary_value tINCOP
+		{
+		    /*%%%*/
+		    SET_LEX_STATE(EXPR_END);
+		    VALUE v = QUOTE_ID($1->u1.id);
+		    NODE *receiver = NEW_LIT(v, &NULL_LOC);
+		    NODE *binding = NEW_VCALL(rb_intern("binding"), &@$);
+		    NODE *args = NEW_LIST(receiver, &NULL_LOC);
+		    args = list_append(p, args, binding);
+
+		    ID plusplus = rb_intern("__plusplus__");
+
+		    $$ = new_qcall(p, $2, $1, plusplus, args, &@2, &@$);
+		    nd_set_line($$, @2.end_pos.lineno);
+		    /*% %*/
+		}
 		;
 
 brace_block	: '{' brace_body '}'
@@ -10177,6 +10195,9 @@ parser_yylex(struct parser_params *p)
 		return parse_numeric(p, '+');
 	    }
 	    return tUPLUS;
+	}
+	if (c == '+') {
+	    return tINCOP;
 	}
 	SET_LEX_STATE(EXPR_BEG);
 	pushback(p, c);
