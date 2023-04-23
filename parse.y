@@ -587,6 +587,7 @@ parser_token2id(enum yytokentype tok)
       TOKEN2ID(tCOLON2);
       TOKEN2ID(tCOLON3);
       TOKEN2ID(tOP_ASGN);
+      TOKEN2ID(tINCOP);
       TOKEN2ID(tASSOC);
       TOKEN2ID(tLPAREN);
       TOKEN2ID(tLPAREN_ARG);
@@ -1519,6 +1520,7 @@ static int looking_at_eol_p(struct parser_params *p);
 %token <id> tANDDOT	RUBY_TOKEN(ANDDOT) "&."
 %token <id> tCOLON2	RUBY_TOKEN(COLON2) "::"
 %token tCOLON3		":: at EXPR_BEG"
+%token <id> tINCOP	"increment-operator" /* ++ */
 %token <id> tOP_ASGN	"operator-assignment" /* +=, -=  etc. */
 %token tASSOC		"=>"
 %token tLPAREN		"("
@@ -1557,7 +1559,7 @@ static int looking_at_eol_p(struct parser_params *p);
 %left  keyword_or keyword_and
 %right keyword_not
 %nonassoc keyword_defined
-%right '=' tOP_ASGN
+%right '=' tOP_ASGN tINCOP
 %left modifier_rescue
 %right '?' ':'
 %nonassoc tDOT2 tDOT3 tBDOT2 tBDOT3
@@ -4290,6 +4292,15 @@ method_call	: fcall paren_args
 			fixpos($$, $1);
 		    /*% %*/
 		    /*% ripper: aref!($1, escape_Qundef($3)) %*/
+		    }
+		| primary_value lex_ctxt tINCOP
+		    {
+		      /*%%%*/
+		      SET_LEX_STATE(EXPR_END);
+		      ID succ = rb_intern("succ");
+		      $$ = new_qcall(p, $3, $1, succ, Qnull, &@3, &@$);
+		      nd_set_line($$, @3.end_pos.lineno);
+		      /*% %*/
 		    }
 		;
 
@@ -10177,6 +10188,9 @@ parser_yylex(struct parser_params *p)
 		return parse_numeric(p, '+');
 	    }
 	    return tUPLUS;
+	}
+	if (c == '+') {
+	    return tINCOP;
 	}
 	SET_LEX_STATE(EXPR_BEG);
 	pushback(p, c);
