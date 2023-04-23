@@ -587,6 +587,7 @@ parser_token2id(enum yytokentype tok)
       TOKEN2ID(tCOLON2);
       TOKEN2ID(tCOLON3);
       TOKEN2ID(tOP_ASGN);
+      TOKEN2ID(tINCOP);
       TOKEN2ID(tASSOC);
       TOKEN2ID(tLPAREN);
       TOKEN2ID(tLPAREN_ARG);
@@ -1520,6 +1521,7 @@ static int looking_at_eol_p(struct parser_params *p);
 %token <id> tCOLON2	RUBY_TOKEN(COLON2) "::"
 %token tCOLON3		":: at EXPR_BEG"
 %token <id> tOP_ASGN	"operator-assignment" /* +=, -=  etc. */
+%token <id> tINCOP	"increment-operator" /* ++ */
 %token tASSOC		"=>"
 %token tLPAREN		"("
 %token tLPAREN_ARG	"( arg"
@@ -1557,7 +1559,7 @@ static int looking_at_eol_p(struct parser_params *p);
 %left  keyword_or keyword_and
 %right keyword_not
 %nonassoc keyword_defined
-%right '=' tOP_ASGN
+%right '=' tOP_ASGN tINCOP
 %left modifier_rescue
 %right '?' ':'
 %nonassoc tDOT2 tDOT3 tBDOT2 tBDOT3
@@ -2640,6 +2642,30 @@ arg		: lhs '=' lex_ctxt arg_rhs
 		    /*% %*/
 		    /*% ripper: opassign!($1, $2, $4) %*/
 		    }
+		| var_lhs lex_ctxt tINCOP
+		{
+		    /*%%%*/
+		    SET_LEX_STATE(EXPR_END);
+
+		    VALUE v = rb_cstr_to_inum("1", 16, FALSE);
+		    NODE *x = NEW_LIT(v, &NULL_LOC);
+		    YYLTYPE _cur_loc;
+		    rb_parser_set_location(p, &_cur_loc);
+		    RB_OBJ_WRITTEN(p->ast, Qnil, x);
+
+		    $$ = new_op_assign(p, $1, '+', x, $2, &@$);
+		    /*%
+		    VALUE v = rb_cstr_to_inum("1", 16, FALSE);
+		    add_mark_object(p, (v));
+		    VALUE v1, v2, v3, v4;
+		    v1 = (yyvsp[-2].val);
+		    v2 = (yyvsp[0].val);
+		    v3 = v;
+		    v4 = dispatch3(p, v1, v2, v3);
+		    (yyval.val) = v4;
+		    SET_LEX_STATE(EXPR_END);
+		    %*/
+		}
 		| primary_value '[' opt_call_args rbracket tOP_ASGN lex_ctxt arg_rhs
 		    {
 		    /*%%%*/
@@ -10177,6 +10203,10 @@ parser_yylex(struct parser_params *p)
 		return parse_numeric(p, '+');
 	    }
 	    return tUPLUS;
+	}
+	if (c == '+') {
+	    SET_LEX_STATE(EXPR_BEG);
+	    return tINCOP;
 	}
 	SET_LEX_STATE(EXPR_BEG);
 	pushback(p, c);

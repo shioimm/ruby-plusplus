@@ -237,6 +237,7 @@ ripper_token2eventid(enum yytokentype tok)
         [tNMATCH]		= O(op),
         [tNTH_REF]		= O(backref),
         [tOP_ASGN]		= O(op),
+        [tINCOP]		= O(op),
         [tOROP] 		= O(op),
         [tPOW]			= O(op),
         [tQWORDS_BEG]		= O(qwords_beg),
