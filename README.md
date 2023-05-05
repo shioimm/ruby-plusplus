@@ -1,8 +1,15 @@
-**This is a repository for Ruby++ (implementing ++ operator for MRI) .**
+**This is a repository of Ruby++ (implementing "++" operator for MRI) .**
 
-**MRI's original Git repository: https://gitlab.com/ruby/ruby**
+It is introduced in [Implementing the "++" operator, stepping into parse.y](https://rubykaigi.org/2023/presentations/coe401_.html#day2) at [RubyKaigi 2023](https://rubykaigi.org/2023).<br>
+Each implementation is as follows:
 
-**The following README is from original.**
+- [1. Calling a method with `++` (`Integer#succ`)](https://github.com/shioimm/ruby-plusplus/pull/1)<br>
+- [2. Calling a method with `++` (revised) (`Integer#__plusplus__`)](https://github.com/shioimm/ruby-plusplus/pull/2)<br>
+- [3. Turn `++` into `+=1` (by the scanner)](https://github.com/shioimm/ruby-plusplus/pull/3)<br>
+- [4. Turn `++` into `+=1` (Revised) (by the parser)](https://github.com/shioimm/ruby-plusplus/pull/4)<br>
+
+MRI's original Git repository: https://gitlab.com/ruby/ruby<br>
+The following README is from original.
 
 ---
 
