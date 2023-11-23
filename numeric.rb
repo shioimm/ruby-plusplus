@@ -300,6 +300,10 @@ class Integer
   def denominator
     1
   end
+
+  def __plusplus__(name, b)
+    b.local_variable_set(name, self.succ)
+  end
 end
 
 #  call-seq:
