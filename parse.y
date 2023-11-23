@@ -10156,6 +10156,14 @@ parser_yylex(struct parser_params *p)
 	return '|';
 
       case '+':
+	if (peekc(p) == '+') {
+	  set_yylval_id('+');
+	  SET_LEX_STATE(EXPR_BEG);
+	  return tOP_ASGN;
+	}
+	if (peekc_n(p, -2) == '+') {
+	  return set_integer_literal(p, rb_cstr_to_inum("1", 16, FALSE), 0);
+	}
 	c = nextc(p);
 	if (IS_AFTER_OPERATOR()) {
 	    SET_LEX_STATE(EXPR_ARG);
